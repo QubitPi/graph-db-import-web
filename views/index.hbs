@@ -1,0 +1,124 @@
+<script src="js/papaparse.min.js"></script>
+<link rel="stylesheet" href="stylesheets/spinner.css" type="text/css">
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Neo4j-csv-import</h1>
+        <div class="row">
+        <div class="col-xs-6">
+            <h2>Select file(s) to get started</h2>
+            <p>Select your CSV files for upload. This tool will parse your files and guide you through the process of defining a property graph data model and import your data into Neo4j.</p>
+            <div class="row">
+                <div class="col-sm-2" id="spinnerDiv">
+
+                </div>
+            </div>
+            <input type="file" id="csv-file" name="files" multiple/>
+        </div>
+        <div class="col-xs-6">
+            <h2><small>Easily import your csv files into Neo4j.</small></h2>
+            <ol>
+                <li>Select files for upload</li>
+                <li>Configure data model with visual tool</li>
+                <li>Run automatically generated import scripts against Neo4j instance</li>
+            </ol>
+            <p>All from this web app!</p>
+        </div>
+        </div>
+
+
+    </div>
+</div>
+
+<div class="container">
+    <div class="starter-template">
+
+<div class="row">
+    <div class="col-sm-10 col-sm-offset-1">
+        <div class="col-xs-12" style="height:50px;"></div>
+        <hr>
+        <h4>Example</h4>
+        <p>In the example screencast below we show how we can quickly import a subset of the <a href="https://github.com/tmcnab/northwind-mongo"> Northwind dataset </a> using this tool. </p>
+        <img class="img-responsive img-thumbnail" src="https://github.com/QubitPi/graph-db-import-web/raw/master/img/csvimport.gif"
+    </div>
+</div>
+
+<div class="modal fade" id="warningModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Privacy note</h4>
+            </div>
+            <div class="modal-body">
+                <p class="text-left"><strong>NOTE: </strong> By choosing continue the files you have just selected will be uploaded to a remote server and will be made available for download over the internet, although using an obfuscated url. If you prefer you can avoid this and run the app locally.</p>
+                <p class="text-left">Your files will be stored on the server for a maximum of one hour</p>
+                <p class="text-left">After completing the data modeling / import process you will have the option to immediately remove all uploaded data. </p>
+                <p class="text-left">By continuing you agree to the <a href="/terms" target="_blank">privacy policy </a> governing this application.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                <button type="button" id="uploadContinueButton" class="btn btn-primary" data-dismiss="modal">Upload data and continue</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+<script>
+    var fileData = {},
+        fileNames = [],
+        fileEvent;
+
+    function handleFileSelect() {
+        var file = fileEvent.target.files[0];
+
+        $('#spinnerDiv').append($('<div class="spinner-loader">Loading…</div>'));
+
+        $('#csv-file').parse({
+            config: {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                //preview: 100,
+                complete: function(results, file) {
+                    var data = results;
+
+                    fileData[file.name] = data;
+                    fileNames.push(file.name);
+                }
+            },
+            before: function(file, inputElem) {
+                console.log(file);
+            },
+            complete: function() {
+
+                fileData['files'] = fileNames;
+                $.ajax({
+                    type: 'POST',
+                    data: JSON.stringify(fileData),
+                    contentType: 'application/json',
+                    url: '/load',
+                    success: function(data) {
+                        console.log('success');
+                        window.location.href = '/load2';
+                    }
+
+                });
+            }
+        });
+    }
+
+    $(document).ready(function(){
+        $("#csv-file").change(function(e) {
+            $('#warningModal').modal('show');
+            fileEvent = e;
+        });
+
+        $('#uploadContinueButton').click(function(e) {
+            e.preventDefault();
+            handleFileSelect();
+
+        })
+    })
+</script></div></div>
